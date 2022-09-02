@@ -7,9 +7,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FreeAgentPool", "FreeAgentP
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FreeAgent.Core", "FreeAgent.Core\FreeAgent.Core.csproj", "{454999C9-D6DE-417A-8660-013692E43C48}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BeesProxyAgent", "Agents\BeesProxyAgent\BeesProxyAgent.csproj", "{40DF9E3D-F54E-4469-9FD1-13B1606DB199}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BeesProxyAgent", "Agents\BeesProxyAgent\BeesProxyAgent.csproj", "{40DF9E3D-F54E-4469-9FD1-13B1606DB199}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Agents", "Agents", "{0A001435-6FFF-42DB-BE2C-A225EC2EF8EE}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DockerFiles", "DockerFiles", "{CB007A2F-54DE-4DE0-96CE-51919427425F}"
+	ProjectSection(SolutionItems) = preProject
+		.dockerignore = .dockerignore
+		Dockerfile = Dockerfile
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

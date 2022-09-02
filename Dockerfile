@@ -7,6 +7,7 @@ EXPOSE 443
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 WORKDIR /src
 COPY ["FreeAgentPool/FreeAgentPool.csproj", "FreeAgentPool/"]
+COPY ["FreeAgent.Core/FreeAgent.Core.csproj", "FreeAgent.Core/"]
 RUN dotnet restore "FreeAgentPool/FreeAgentPool.csproj"
 COPY . .
 WORKDIR "/src/FreeAgentPool"
