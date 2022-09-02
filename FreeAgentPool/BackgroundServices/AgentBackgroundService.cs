@@ -21,7 +21,7 @@ namespace FreeAgentPool.BackgroundServices
                 try
                 {
                     timer.Enabled = false;
-                    PluginContainer.Default.TestAgent();
+                    PluginContainer.Default.Execute();
                 }
                 catch (Exception exception)
                 {

@@ -4,7 +4,7 @@
 // Project: FreeAgentPool
 // FileName: PluginContainer.cs
 // Create Time: 2022-09-02 9:16
-// Update Time: 2022-09-02 9:21
+// Update Time: 2022-09-02 10:13
 
 #endregion
 
@@ -29,9 +29,11 @@ public class PluginContainer
     private readonly Timer _timer;
     private readonly Dictionary<string, WeakReference> _weakReferenceMap = new();
     private List<string> _changedQueue = new();
+    private readonly List<string> _commonDllFileNames;
 
     private PluginContainer()
     {
+        _commonDllFileNames = Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory).Where(x => x.EndsWith(".dll") || x.EndsWith(".exe") || x.EndsWith(".pdb")).Select(x => Path.GetFileName(x)).ToList();
         _agentsFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "agents");
         if (!Directory.Exists(_agentsFolder))
         {
@@ -51,6 +53,9 @@ public class PluginContainer
         {
             directoryInfo.Attributes |= FileAttributes.Hidden;
         }
+
+
+        ClearCommonDll(_agentsFolder);
 
         CopyFilesRecursively(_agentsFolder, _tempFolder);
 
@@ -74,6 +79,17 @@ public class PluginContainer
         watcher.Renamed += Watcher_Renamed;
         _timer = new Timer(3 * 1000);
         _timer.Elapsed += _timer_Elapsed;
+    }
+
+    private void ClearCommonDll(string targetFolder)
+    {
+        foreach (var dllFile in Directory.GetFiles(targetFolder, "*", SearchOption.AllDirectories).Where(x => x.EndsWith(".dll") || x.EndsWith(".exe") || x.EndsWith(".pdb")).ToList())
+        {
+            if (_commonDllFileNames.Contains(Path.GetFileName(dllFile)))
+            {
+                File.Delete(dllFile);
+            }
+        }
     }
 
     public static PluginContainer Default
@@ -121,7 +137,13 @@ public class PluginContainer
                 Directory.Delete(targetFolder, true);
             }
 
+            if (!Directory.GetFiles(sourceFolder, "*", SearchOption.AllDirectories)
+                .Any(x => x.EndsWith(".dll") || x.EndsWith("*.exe")))
+            {
+                continue;
+            }
             CopyFilesRecursively(sourceFolder, targetFolder);
+            ClearCommonDll(targetFolder);
             LoadContext(pluginName, out weakReference);
             if (_weakReferenceMap.ContainsKey(pluginName))
             {
@@ -195,28 +217,16 @@ public class PluginContainer
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    public void TestAgent()
+    public void Execute()
     {
         foreach (var pluginLoadContext in ContextMap.Values)
         {
             var types = pluginLoadContext.Assemblies.SelectMany(x => x.ExportedTypes).ToList();
+            types = types.Where(x => typeof(IAgent).IsAssignableFrom(x)).ToList();
             foreach (var type in types)
             {
-                try
-                {
-                    var method = type.GetMethod(nameof(IAgent.Execute));
-                    if (method == null)
-                    {
-                        continue;
-                    }
-
-                    var obj = Activator.CreateInstance(type);
-                    method.Invoke(obj, null);
-                }
-                catch (Exception)
-                {
-                    // ignored
-                }
+                var obj = Activator.CreateInstance(type) as IAgent;
+                obj?.Execute();
             }
         }
     }
@@ -226,6 +236,12 @@ public class PluginContainer
         var path = e.Name;
         if (string.IsNullOrWhiteSpace(path))
         {
+            return;
+        }
+
+        if (_commonDllFileNames.Contains(Path.GetFileName(e.FullPath)))
+        {
+            File.Delete(e.FullPath);
             return;
         }
 
