@@ -4,7 +4,7 @@
 // Project: FreeAgentPool
 // FileName: PluginContainer.cs
 // Create Time: 2022-09-02 9:16
-// Update Time: 2022-09-02 10:13
+// Update Time: 2022-09-02 11:02
 
 #endregion
 
@@ -25,15 +25,17 @@ public class PluginContainer
     private static PluginContainer? _instance;
     private static readonly object Lock = new();
     private readonly string _agentsFolder;
+    private readonly List<string> _commonDllFileNames;
     private readonly string _tempFolder;
     private readonly Timer _timer;
     private readonly Dictionary<string, WeakReference> _weakReferenceMap = new();
     private List<string> _changedQueue = new();
-    private readonly List<string> _commonDllFileNames;
 
     private PluginContainer()
     {
-        _commonDllFileNames = Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory).Where(x => x.EndsWith(".dll") || x.EndsWith(".exe") || x.EndsWith(".pdb")).Select(x => Path.GetFileName(x)).ToList();
+        _commonDllFileNames = Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory)
+            .Where(x => x.EndsWith(".dll") || x.EndsWith(".exe") || x.EndsWith(".pdb")).Select(x => Path.GetFileName(x))
+            .ToList();
         _agentsFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "agents");
         if (!Directory.Exists(_agentsFolder))
         {
@@ -81,17 +83,6 @@ public class PluginContainer
         _timer.Elapsed += _timer_Elapsed;
     }
 
-    private void ClearCommonDll(string targetFolder)
-    {
-        foreach (var dllFile in Directory.GetFiles(targetFolder, "*", SearchOption.AllDirectories).Where(x => x.EndsWith(".dll") || x.EndsWith(".exe") || x.EndsWith(".pdb")).ToList())
-        {
-            if (_commonDllFileNames.Contains(Path.GetFileName(dllFile)))
-            {
-                File.Delete(dllFile);
-            }
-        }
-    }
-
     public static PluginContainer Default
     {
         get
@@ -109,6 +100,16 @@ public class PluginContainer
     }
 
     public ConcurrentDictionary<string, PluginLoadContext> ContextMap { get; } = new();
+
+    private void ClearCommonDll(string targetFolder)
+    {
+        foreach (var dllFile in Directory.GetFiles(targetFolder, "*", SearchOption.AllDirectories)
+                     .Where(x => x.EndsWith(".dll") || x.EndsWith(".exe") || x.EndsWith(".pdb")).ToList()
+                     .Where(dllFile => _commonDllFileNames.Contains(Path.GetFileName(dllFile))))
+        {
+            File.Delete(dllFile);
+        }
+    }
 
     private void _timer_Elapsed(object? sender, ElapsedEventArgs e)
     {
@@ -138,10 +139,11 @@ public class PluginContainer
             }
 
             if (!Directory.GetFiles(sourceFolder, "*", SearchOption.AllDirectories)
-                .Any(x => x.EndsWith(".dll") || x.EndsWith("*.exe")))
+                    .Any(x => x.EndsWith(".dll") || x.EndsWith("*.exe")))
             {
                 continue;
             }
+
             CopyFilesRecursively(sourceFolder, targetFolder);
             ClearCommonDll(targetFolder);
             LoadContext(pluginName, out weakReference);
