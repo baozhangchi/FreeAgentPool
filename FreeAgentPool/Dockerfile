@@ -1,4 +1,5 @@
 ﻿FROM mcr.microsoft.com/dotnet/aspnet:6.0 AS base
+MAINTAINER baozhangchi "baozhangchi@live.com"
 WORKDIR /app
 EXPOSE 80
 EXPOSE 443
